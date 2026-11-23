@@ -2,10 +2,11 @@ name: XQ bot ping
 
 # Jadwal 5 menit biasa ternyata hanya berjalan beberapa kali sehari, sehingga
 # banyak sinyal terlewat. Satu job panjang memanggil endpoint tiap menit selama
-# hampir 6 jam; jadwalnya cukup 4 kali sehari sehingga jarang tertunda.
+# 55 menit, dijadwalkan tiap jam: kalau satu jadwal tertunda, jam berikutnya
+# tetap mengambil alih.
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -17,14 +18,14 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 355
+    timeout-minutes: 60
     steps:
       - name: Panggil pemeriksa sinyal tiap menit
         env:
           TICK: ${{ secrets.XQ_TICK_TOKEN }}
         run: |
           set -u
-          end=$((SECONDS + 21000))
+          end=$((SECONDS + 3300))
           while [ "$SECONDS" -lt "$end" ]; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://site-5b72e1a8b78047368fcfedd129cbb959.freebuff.page/api/bot/tick?k=${TICK}" || true)
             echo "$(date -u +%H:%M:%S) HTTP $code"
