@@ -1,31 +1,30 @@
 name: XQ bot ping
 
-# Jadwal 5 menit biasa ternyata hanya berjalan beberapa kali sehari, sehingga
-# banyak sinyal terlewat. Satu job panjang memanggil endpoint tiap menit selama
-# 55 menit, dijadwalkan tiap jam: kalau satu jadwal tertunda, jam berikutnya
-# tetap mengambil alih.
+# Jadwal per jam sering ditunda GitHub sampai berjam-jam, sehingga sinyal
+# terlewat. Satu job panjang 5 jam 45 menit memanggil endpoint tiap menit;
+# jadwal berikutnya masuk antrean dan mulai tepat setelah job selesai.
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 */5 * * *"
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
   group: xq-ping
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 355
     steps:
       - name: Panggil pemeriksa sinyal tiap menit
         env:
           TICK: ${{ secrets.XQ_TICK_TOKEN }}
         run: |
           set -u
-          end=$((SECONDS + 3300))
+          end=$((SECONDS + 20700))
           while [ "$SECONDS" -lt "$end" ]; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 25 "https://site-5b72e1a8b78047368fcfedd129cbb959.freebuff.page/api/bot/tick?k=${TICK}" || true)
             echo "$(date -u +%H:%M:%S) HTTP $code"
